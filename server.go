@@ -21,7 +21,7 @@ type user struct {
 	Message string
 }
 
-func getlogin(w http.ResponseWriter, r *http.Request) {
+func Getlogin(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("method:", r.Method)
 	if r.Method == "GET" {
 		t, err := template.ParseFiles("index.html")
@@ -38,7 +38,7 @@ func getlogin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-func login(w http.ResponseWriter, r *http.Request) {
+func POSTlogin(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("method:", r.Method)
 	if r.Method == "POST" {
 		r.ParseForm()
@@ -50,7 +50,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		password := gjson.Get(JsonStr, "password")
 		port := gjson.Get(JsonStr, "port")
 		url := gjson.Get(JsonStr, "url")
-		user := gjson.Get(Json, "user")
+		user := gjson.Get(JsonStr, "user")
 		pd := password.String()
 		pt := port.String()
 		ul := url.String()
@@ -60,7 +60,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		//查找数据
-		find, err := db.Query("SELECT id FROM userinfo WHERE iclass=?", r.FormValue("iclass")) //学号
+		find, err := db.Query("SELECT id FROM userinfo WHERE iclass=?", template.HTMLEscapeString(r.FormValue("iclass"))) //学号
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -70,7 +70,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		if user_id != 0 {
 			//更新数据
-			up, err := db.Exec("UPDATE userinfo SET phone=?, message=? WHERE id=?", r.FormValue("phone"), r.FormValue("message"), user_id)
+			up, err := db.Exec("UPDATE userinfo SET phone=?, message=? WHERE id=?", template.HTMLEscapeString(r.FormValue("phone")), template.HTMLEscapeString(r.FormValue("message")), user_id)
 			fmt.Println(up)
 			if err != nil {
 				log.Fatal(err)
@@ -87,7 +87,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 			r.ParseForm()
-			res, err := stmt.Exec(r.FormValue("name"), r.FormValue("phone"), r.FormValue("iclass"), r.FormValue("message"))
+			res, err := stmt.Exec(template.HTMLEscapeString(r.FormValue("name")), template.HTMLEscapeString(r.FormValue("phone")), template.HTMLEscapeString(r.FormValue("iclass")), template.HTMLEscapeString(r.FormValue("message")))
 			if err != nil {
 				log.Fatal(err)
 				w.Write([]byte("fail"))
@@ -96,14 +96,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 			}
 			fmt.Println(res)
 		}
-
 	}
 }
 
 func main() {
 	rtr := mux.NewRouter()
-	rtr.HandleFunc("/", getlogin)
-	http.HandleFunc("/login", login)
+	rtr.HandleFunc("/", Getlogin)
+	http.HandleFunc("/login", POSTlogin)
 	files := http.FileServer(http.Dir("Public"))
 	rtr.PathPrefix("/").Handler(http.StripPrefix("/", files))
 	http.Handle("/", rtr)
