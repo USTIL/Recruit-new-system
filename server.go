@@ -3,13 +3,14 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/gorilla/mux"
-	"github.com/tidwall/gjson"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
+	"github.com/tidwall/gjson"
 )
 
 var name string
